@@ -7,7 +7,8 @@ Goals
 =====
 
 Simpler is a very simple REST library for Java, using JSON for message encoding and Servlets for 
-HTTP transport. 
+HTTP transport. There are other, more sophisticated REST libraries for Java. If you don't need the
+fancy bells and whistles, Simpler might be right for you.
 
 Dependencies
 ============
