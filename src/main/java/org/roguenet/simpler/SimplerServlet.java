@@ -160,16 +160,23 @@ public abstract class SimplerServlet extends HttpServlet {
         return _params.get().get(name, Converters.TO_INT, defValue);
     }
 
-    protected <T extends Enum<T>> T enumParam (String name, final Class<T> cls) {
+    protected <T extends Enum<T>> T enumParam (String name, final Class<T> cls, T defValue) {
+        return enumParam(name, cls, defValue, true);
+    }
+
+    protected <T extends Enum<T>> T enumParam (String name, final Class<T> cls,
+            T defValue, final boolean upperCase) {
         return _params.get().get(name, new Function<String, T>() {
             public T apply (String input) {
+                if (input == null) return null;
                 try {
+                    if (upperCase) input = input.toUpperCase();
                     return Enum.valueOf(cls, input);
                 } catch (Exception e) {
                     return null;
                 }
             }
-        }, null);
+        }, defValue);
     }
 
     protected String strId () {
