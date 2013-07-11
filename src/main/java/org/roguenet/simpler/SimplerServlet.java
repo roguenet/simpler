@@ -1,10 +1,12 @@
 package org.roguenet.simpler;
 
+import com.google.common.base.Function;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.samskivert.util.Logger;
 import com.samskivert.util.StringUtil;
+import com.threerings.servlet.util.Converters;
 import com.threerings.servlet.util.Parameters;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -147,6 +149,51 @@ public abstract class SimplerServlet extends HttpServlet {
             rsp.getWriter().close();
         }
         return true;
+    }
+
+
+    protected String stringParam (String name) {
+        return _params.get().get(name);
+    }
+
+    protected int intParam (String name, int defValue) {
+        return _params.get().get(name, Converters.TO_INT, defValue);
+    }
+
+    protected <T extends Enum<T>> T enumParam (String name, final Class<T> cls) {
+        return _params.get().get(name, new Function<String, T>() {
+            public T apply (String input) {
+                try {
+                    return Enum.valueOf(cls, input);
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+        }, null);
+    }
+
+    protected String strId () {
+        String pathInfo = _pathInfo.get();
+        if (StringUtil.isBlank(pathInfo)) return null;
+        int idx = pathInfo.indexOf('/');
+        if (idx >= 0) {
+            log.warning("Path info more complex than expected", "path", pathInfo);
+        }
+        return idx < 0 ? pathInfo : pathInfo.substring(0, idx);
+    }
+
+    protected int intId () {
+        return toInt(strId(), -1);
+    }
+
+    protected int toInt (String value, int defval) {
+        if (value == null) return defval;
+        try {
+            return Integer.parseInt(value);
+        } catch (Exception e) {
+            log.warning("Received non-integer value", "value", value);
+        }
+        return defval;
     }
 
     protected String getMethodName (HttpServletRequest req) {
