@@ -57,6 +57,8 @@ public abstract class SimplerServlet extends HttpServlet {
         }
     }
 
+    public String getBaseEndpoint () { return _baseEndpoint; }
+
     @Override
     protected final void doGet (HttpServletRequest req, HttpServletResponse rsp)
         throws IOException, ServletException {
