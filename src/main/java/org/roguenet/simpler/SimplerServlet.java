@@ -261,7 +261,7 @@ public abstract class SimplerServlet extends HttpServlet {
     protected static final String DEFAULT_FIND_ALL = "_findAll";
     protected static final String DEFAULT_FIND = "_find";
 
-    protected static final Logger log = Logger.getLogger(SimplerServlet.class);
+    private static final Logger log = Logger.getLogger(SimplerServlet.class);
 
     protected String _baseEndpoint;
     protected Gson _gson;
