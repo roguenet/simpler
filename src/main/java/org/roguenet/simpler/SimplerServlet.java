@@ -18,11 +18,23 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.roguenet.simpler.util.RequestLocal;
+import react.UnitSignal;
 
 public abstract class SimplerServlet extends HttpServlet {
     public SimplerServlet (String baseEndpoint, Gson gson) {
+        this(baseEndpoint, gson, new ThreadLocal<UnitSignal>());
+    }
+
+    public SimplerServlet (String baseEndpoint, Gson gson, ThreadLocal<UnitSignal> reset) {
+        _reset = reset;
         _baseEndpoint = baseEndpoint;
         _gson = gson;
+
+        _req = new RequestLocal<HttpServletRequest>(_reset);
+        _rsp = new RequestLocal<HttpServletResponse>(_reset);
+        _params = new RequestLocal<Parameters>(_reset);
+        _pathInfo = new RequestLocal<String>(_reset);
 
         for (Method method : getClass().getDeclaredMethods()) {
             Map<String, RestMethod> methodMap = null;
@@ -78,8 +90,10 @@ public abstract class SimplerServlet extends HttpServlet {
         if (!handleRequest(req, rsp, _deletes)) super.doDelete(req, rsp);
     }
 
-    protected final boolean handleRequest (HttpServletRequest req, HttpServletResponse rsp,
-        Map<String, RestMethod> methodMap) throws IOException {
+    protected boolean handleRequest (HttpServletRequest req, HttpServletResponse rsp,
+            Map<String, RestMethod> methodMap) throws IOException {
+        resetThreadRequest();
+
         String methodName = getMethodName(req);
         RestMethod method = methodMap.get(methodName);
         String pathInfo = req.getPathInfo();
@@ -243,6 +257,13 @@ public abstract class SimplerServlet extends HttpServlet {
         }
     }
 
+    protected void resetThreadRequest () {
+        UnitSignal reset = _reset.get();
+        // don't assume we were given a self-initializing ThreadLocal.
+        if (reset == null) _reset.set(reset = new UnitSignal());
+        reset.emit();
+    }
+
     protected static class RestMethod {
         public final Method method;
         public final Class<?> requestClass;
@@ -266,10 +287,12 @@ public abstract class SimplerServlet extends HttpServlet {
     protected String _baseEndpoint;
     protected Gson _gson;
 
-    protected final ThreadLocal<HttpServletRequest> _req = new ThreadLocal<HttpServletRequest>();
-    protected final ThreadLocal<HttpServletResponse> _rsp = new ThreadLocal<HttpServletResponse>();
-    protected final ThreadLocal<Parameters> _params = new ThreadLocal<Parameters>();
-    protected final ThreadLocal<String> _pathInfo = new ThreadLocal<String>();
+    protected final ThreadLocal<UnitSignal> _reset;
+
+    protected final RequestLocal<HttpServletRequest> _req;
+    protected final RequestLocal<HttpServletResponse> _rsp;
+    protected final RequestLocal<Parameters> _params;
+    protected final RequestLocal<String> _pathInfo;
 
     protected final Map<String, RestMethod> _gets = new HashMap<String, RestMethod>();
     protected final Map<String, RestMethod> _posts = new HashMap<String, RestMethod>();
