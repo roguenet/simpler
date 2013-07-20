@@ -92,75 +92,79 @@ public abstract class SimplerServlet extends HttpServlet {
 
     protected boolean handleRequest (HttpServletRequest req, HttpServletResponse rsp,
             Map<String, RestMethod> methodMap) throws IOException {
-        resetThreadRequest();
-
-        String methodName = getMethodName(req);
-        RestMethod method = methodMap.get(methodName);
-        String pathInfo = req.getPathInfo();
-        _pathInfo.set(pathInfo == null ? "" : req.getPathInfo().substring(methodName.length() + 1));
-        _req.set(req);
-        _rsp.set(rsp);
-        _params.set(new Parameters(req));
-        if (method == null) {
-            method = checkDefaultMethods(methodName, methodMap);
-            if (method == null) return false;
-        }
-
-        rsp.setHeader("Cache-Control", "no-cache");
-        rsp.setHeader("Content-Type",
-            method.contentType == null ? "application/json" : method.contentType);
-        boolean usedWriter = false;
         try {
-            Object response;
-            if (method.requestClass != null) {
-                Object param = _gson.fromJson(
-                    new InputStreamReader(req.getInputStream()), method.requestClass);
-                if (param == null) {
-                    throw new RestException("Missing request data");
-                }
-                response = method.method.invoke(this, param);
-            } else {
-                response = method.method.invoke(this);
+            String methodName = getMethodName(req);
+            RestMethod method = methodMap.get(methodName);
+            String pathInfo = req.getPathInfo();
+            _pathInfo.set(pathInfo == null ? "" :
+                req.getPathInfo().substring(methodName.length() + 1));
+            _req.set(req);
+            _rsp.set(rsp);
+            _params.set(new Parameters(req));
+            if (method == null) {
+                method = checkDefaultMethods(methodName, methodMap);
+                if (method == null) return false;
             }
 
-            // methods with a specific contentType handle their own response writing
-            if (method.contentType == null) {
-                if (response == null) {
-                    response = new JsonObject();
-                    // default to an empty json object instead of "null", friendlier for the client
-                }
-                if (method.responseName != null) {
-                    if (!(response instanceof JsonElement)) {
-                        response = _gson.toJsonTree(response);
+            rsp.setHeader("Cache-Control", "no-cache");
+            rsp.setHeader("Content-Type",
+                method.contentType == null ? "application/json" : method.contentType);
+            boolean usedWriter = false;
+            try {
+                Object response;
+                if (method.requestClass != null) {
+                    Object param = _gson.fromJson(
+                        new InputStreamReader(req.getInputStream()), method.requestClass);
+                    if (param == null) {
+                        throw new RestException("Missing request data");
                     }
-                    JsonObject json = new JsonObject();
-                    json.add(method.responseName, (JsonElement)response);
-                    response = json;
-                }
-                usedWriter = true;
-                if (response instanceof JsonElement) {
-                    _gson.toJson((JsonElement)response, rsp.getWriter());
+                    response = method.method.invoke(this, param);
                 } else {
-                    _gson.toJson(response, rsp.getWriter());
+                    response = method.method.invoke(this);
                 }
+
+                // methods with a specific contentType handle their own response writing
+                if (method.contentType == null) {
+                    if (response == null) {
+                        response = new JsonObject();
+                        // default to an empty json object instead of "null", friendlier for the
+                        // client
+                    }
+                    if (method.responseName != null) {
+                        if (!(response instanceof JsonElement)) {
+                            response = _gson.toJsonTree(response);
+                        }
+                        JsonObject json = new JsonObject();
+                        json.add(method.responseName, (JsonElement)response);
+                        response = json;
+                    }
+                    usedWriter = true;
+                    if (response instanceof JsonElement) {
+                        _gson.toJson((JsonElement)response, rsp.getWriter());
+                    } else {
+                        _gson.toJson(response, rsp.getWriter());
+                    }
+                }
+            } catch (IllegalAccessException iae) {
+                usedWriter = true;
+                doUnexpectedFailure(iae);
+            } catch (InvocationTargetException ite) {
+                usedWriter = true;
+                if (ite.getCause() instanceof RestException) {
+                    ((RestException)ite.getCause()).write(_gson, rsp);
+                } else {
+                    doUnexpectedFailure(ite.getCause());
+                }
+            } catch (RestException de) {
+                usedWriter = true;
+                de.write(_gson, rsp);
             }
-        } catch (IllegalAccessException iae) {
-            usedWriter = true;
-            doUnexpectedFailure(iae);
-        } catch (InvocationTargetException ite) {
-            usedWriter = true;
-            if (ite.getCause() instanceof RestException) {
-                ((RestException)ite.getCause()).write(_gson, rsp);
-            } else {
-                doUnexpectedFailure(ite.getCause());
+            if (usedWriter) {
+                rsp.getWriter().flush();
+                rsp.getWriter().close();
             }
-        } catch (RestException de) {
-            usedWriter = true;
-            de.write(_gson, rsp);
-        }
-        if (usedWriter) {
-            rsp.getWriter().flush();
-            rsp.getWriter().close();
+        } finally {
+            resetThreadRequest();
         }
         return true;
     }
