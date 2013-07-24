@@ -145,6 +145,8 @@ public abstract class SimplerServlet extends HttpServlet {
                 usedWriter = true;
                 if (ite.getCause() instanceof RestException) {
                     ((RestException)ite.getCause()).write(_gson, rsp);
+                } else if (ite.getCause() instanceof IOException) {
+                    throw (IOException)ite.getCause();
                 } else {
                     doUnexpectedFailure(ite.getCause());
                 }
