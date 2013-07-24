@@ -24,11 +24,18 @@ import react.UnitSignal;
 
 public abstract class SimplerServlet extends HttpServlet {
     public SimplerServlet (String baseEndpoint, Gson gson) {
-        this(baseEndpoint, gson, new ThreadLocal<UnitSignal>());
+        this(baseEndpoint, gson, new ThreadLocal<UnitSignal>() {
+            @Override protected UnitSignal initialValue () {
+                return new UnitSignal();
+            }
+        });
     }
 
     public SimplerServlet (String baseEndpoint, Gson gson, ThreadLocal<UnitSignal> reset) {
         _reset = reset;
+        if (_reset.get() == null) {
+            log.error("The reset ThreadLocal must be configured with initialValue.");
+        }
         _baseEndpoint = baseEndpoint;
         _gson = gson;
 
@@ -154,7 +161,7 @@ public abstract class SimplerServlet extends HttpServlet {
                 rsp.getWriter().close();
             }
         } finally {
-            resetThreadRequest();
+            _reset.get().emit();
         }
         return true;
     }
@@ -249,13 +256,6 @@ public abstract class SimplerServlet extends HttpServlet {
         } catch (IOException ioe) {
             log.warning("ioe attempting to send error message", ioe);
         }
-    }
-
-    protected void resetThreadRequest () {
-        UnitSignal reset = _reset.get();
-        // don't assume we were given a self-initializing ThreadLocal.
-        if (reset == null) _reset.set(reset = new UnitSignal());
-        reset.emit();
     }
 
     protected boolean methodIsMicrotome (Method method) {
