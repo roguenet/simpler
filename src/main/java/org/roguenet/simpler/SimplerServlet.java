@@ -10,6 +10,7 @@ import com.threerings.servlet.util.Converters;
 import com.threerings.servlet.util.Parameters;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -62,11 +63,17 @@ public abstract class SimplerServlet extends HttpServlet {
                 }
                 Class<?> reqParam = parameters.length == 0 ? null : parameters[0];
                 String contentType = null;
+                boolean mt = methodIsMicrotome(method);
                 if (method.isAnnotationPresent(NotJson.class)) {
-                    contentType = method.getAnnotation(NotJson.class).contentType();
+                    if (mt) {
+                        log.warning("Method has both @Microtome and @NotJson. @NotJson ignored.",
+                            "method", method);
+                    } else {
+                        contentType = method.getAnnotation(NotJson.class).contentType();
+                    }
                 }
                 methodMap.put(method.getName(),
-                    new RestMethod(method, reqParam, responseName, contentType));
+                    new RestMethod(method, reqParam, responseName, contentType, mt));
             }
         }
     }
@@ -125,25 +132,8 @@ public abstract class SimplerServlet extends HttpServlet {
 
                 // methods with a specific contentType handle their own response writing
                 if (method.contentType == null) {
-                    if (response == null) {
-                        response = new JsonObject();
-                        // default to an empty json object instead of "null", friendlier for the
-                        // client
-                    }
-                    if (method.responseName != null) {
-                        if (!(response instanceof JsonElement)) {
-                            response = _gson.toJsonTree(response);
-                        }
-                        JsonObject json = new JsonObject();
-                        json.add(method.responseName, (JsonElement)response);
-                        response = json;
-                    }
+                    serializeResponse(method, response, rsp.getWriter());
                     usedWriter = true;
-                    if (response instanceof JsonElement) {
-                        _gson.toJson((JsonElement)response, rsp.getWriter());
-                    } else {
-                        _gson.toJson(response, rsp.getWriter());
-                    }
                 }
             } catch (IllegalAccessException iae) {
                 usedWriter = true;
@@ -268,18 +258,45 @@ public abstract class SimplerServlet extends HttpServlet {
         reset.emit();
     }
 
+    protected boolean methodIsMicrotome (Method method) {
+        return false;
+    }
+
+    protected void serializeResponse (RestMethod method, Object response, PrintWriter out) {
+        if (response == null) {
+            response = new JsonObject();
+            // default to an empty json object instead of "null", friendlier for the
+            // client
+        }
+        if (method.responseName != null) {
+            if (!(response instanceof JsonElement)) {
+                response = _gson.toJsonTree(response);
+            }
+            JsonObject json = new JsonObject();
+            json.add(method.responseName, (JsonElement)response);
+            response = json;
+        }
+        if (response instanceof JsonElement) {
+            _gson.toJson((JsonElement)response, out);
+        } else {
+            _gson.toJson(response, out);
+        }
+    }
+
     protected static class RestMethod {
         public final Method method;
         public final Class<?> requestClass;
         public final String responseName;
         public final String contentType;
+        public final boolean microtome;
 
         public RestMethod (Method method, Class<?> requestClass, String responseName,
-            String contentType) {
+            String contentType, boolean microtome) {
             this.method = method;
             this.requestClass = requestClass;
             this.responseName = responseName;
             this.contentType = contentType;
+            this.microtome = microtome;
         }
     }
 
