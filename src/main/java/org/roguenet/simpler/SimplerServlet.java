@@ -72,12 +72,8 @@ public abstract class SimplerServlet extends HttpServlet {
                 String contentType = null;
                 boolean mt = methodIsMicrotome(method);
                 if (method.isAnnotationPresent(NotJson.class)) {
-                    if (mt) {
-                        log.warning("Method has both @Microtome and @NotJson. @NotJson ignored.",
-                            "method", method);
-                    } else {
-                        contentType = method.getAnnotation(NotJson.class).contentType();
-                    }
+                    mt = false;
+                    contentType = method.getAnnotation(NotJson.class).contentType();
                 }
                 methodMap.put(method.getName(),
                     new RestMethod(method, reqParam, responseName, contentType, mt));
