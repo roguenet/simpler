@@ -71,9 +71,9 @@ public abstract class SimplerServlet extends HttpServlet {
                 Class<?> reqParam = parameters.length == 0 ? null : parameters[0];
                 String contentType = null;
                 boolean mt = methodIsMicrotome(method);
-                if (method.isAnnotationPresent(NotJson.class)) {
+                if (method.isAnnotationPresent(NotSerialized.class)) {
                     mt = false;
-                    contentType = method.getAnnotation(NotJson.class).contentType();
+                    contentType = method.getAnnotation(NotSerialized.class).contentType();
                 }
                 methodMap.put(method.getName(),
                     new RestMethod(method, reqParam, responseName, contentType, mt));

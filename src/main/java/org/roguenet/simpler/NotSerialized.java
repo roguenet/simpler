@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD})
 @Retention(value=RetentionPolicy.RUNTIME)
-public @interface NotJson
+public @interface NotSerialized
 {
     String contentType ();
 }
