@@ -42,9 +42,12 @@ public class MicrotomeSimplerServlet extends SimplerServlet {
         JsonObject json = new JsonObject();
         WritableObject writer = JsonUtil.createWriter(method.responseName, json);
         _microtome.write((Page)response, writer);
-        JsonObject wrapper = new JsonObject();
-        wrapper.add(method.responseName, json);
-        _gson.toJson(wrapper, out);
+        if (method.responseName != null) {
+            JsonObject wrapper = new JsonObject();
+            wrapper.add(method.responseName, json);
+            json = wrapper;
+        }
+        _gson.toJson(json, out);
     }
 
     protected final MicrotomeCtx _microtome;
