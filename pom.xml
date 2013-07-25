@@ -3,7 +3,7 @@
 
   <groupId>org.roguenet</groupId>
   <artifactId>simpler</artifactId>
-  <version>0.2</version>
+  <version>0.3-SNAPSHOT</version>
   <name>Simpler</name>
 
   <dependencies>
