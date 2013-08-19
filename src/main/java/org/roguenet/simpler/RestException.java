@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class RestException extends ServletException {
     public static final int DEFAULT_CODE = 200;
+    public static final int INTERNAL_ERROR = 500;
 
     public final int code;
 

@@ -153,6 +153,8 @@ public abstract class SimplerServlet extends HttpServlet {
             } catch (RestException de) {
                 usedWriter = true;
                 de.write(_gson, rsp);
+            } catch (Throwable t) {
+                doUnexpectedFailure(t);
             }
             if (usedWriter) {
                 rsp.getWriter().flush();
@@ -250,7 +252,8 @@ public abstract class SimplerServlet extends HttpServlet {
 
         log.warning("unexpected failure", e);
         try {
-            new RestException(e.getMessage()).write(_gson, _rsp.get());
+            new RestException(RestException.INTERNAL_ERROR,
+                e.getMessage()).write(_gson, _rsp.get());
         } catch (IOException ioe) {
             log.warning("ioe attempting to send error message", ioe);
         }
