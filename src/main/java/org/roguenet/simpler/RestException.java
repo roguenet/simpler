@@ -35,11 +35,14 @@ public class RestException extends ServletException {
 
     public void write (Gson gson, HttpServletResponse rsp) throws IOException {
         rsp.setHeader("Content-Type", "application/json");
-        JsonObject json = new JsonObject();
+        JsonObject root = new JsonObject();
+        root.add("error", addProperties(new JsonObject()));
+        gson.toJson(root, rsp.getWriter());
+    }
+
+    protected JsonObject addProperties (JsonObject json) {
         json.addProperty("message", getMessage());
         json.addProperty("code", code);
-        JsonObject root = new JsonObject();
-        root.add("error", json);
-        gson.toJson(root, rsp.getWriter());
+        return json;
     }
 }
