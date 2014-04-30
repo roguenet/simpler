@@ -57,22 +57,6 @@ public abstract class SimplerServlet extends HttpServlet {
         }
     }
 
-    protected void mapMethod (Method method, Map<String, RestMethod> map, String responseName) {
-        Class<?>[] parameters = method.getParameterTypes();
-        if (parameters.length != 0 && parameters.length != 1) {
-            log.warning("Method has more than one parameter", "method", method);
-        }
-        Class<?> reqParam = parameters.length == 0 ? null : parameters[0];
-        String contentType = null;
-        boolean mt = methodIsMicrotome(method);
-        if (method.isAnnotationPresent(NotSerialized.class)) {
-            mt = false;
-            contentType = method.getAnnotation(NotSerialized.class).contentType();
-        }
-        if (responseName != null && responseName.isEmpty()) responseName = null;
-        map.put(method.getName(), new RestMethod(method, reqParam, responseName, contentType, mt));
-    }
-
     public String getBaseEndpoint () { return _baseEndpoint; }
 
     @Override
@@ -90,6 +74,22 @@ public abstract class SimplerServlet extends HttpServlet {
     @Override protected void doDelete (HttpServletRequest req, HttpServletResponse rsp)
         throws ServletException, IOException {
         if (!handleRequest(req, rsp, _deletes)) super.doDelete(req, rsp);
+    }
+
+    protected void mapMethod (Method method, Map<String, RestMethod> map, String responseName) {
+        Class<?>[] parameters = method.getParameterTypes();
+        if (parameters.length != 0 && parameters.length != 1) {
+            log.warning("Method has more than one parameter", "method", method);
+        }
+        Class<?> reqParam = parameters.length == 0 ? null : parameters[0];
+        String contentType = null;
+        boolean mt = methodIsMicrotome(method);
+        if (method.isAnnotationPresent(NotSerialized.class)) {
+            mt = false;
+            contentType = method.getAnnotation(NotSerialized.class).contentType();
+        }
+        if (responseName != null && responseName.isEmpty()) responseName = null;
+        map.put(method.getName(), new RestMethod(method, reqParam, responseName, contentType, mt));
     }
 
     protected boolean handleRequest (HttpServletRequest req, HttpServletResponse rsp,
@@ -157,7 +157,6 @@ public abstract class SimplerServlet extends HttpServlet {
         }
         return true;
     }
-
 
     protected String stringParam (String name) {
         return _params.get().get(name);
