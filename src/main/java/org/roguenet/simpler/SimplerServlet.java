@@ -43,6 +43,7 @@ public abstract class SimplerServlet extends HttpServlet {
         _rsp = new RequestLocal<HttpServletResponse>(_reset);
         _params = new RequestLocal<Parameters>(_reset);
         _pathInfo = new RequestLocal<String>(_reset);
+        _requestMethod = new RequestLocal<RequestMethod>(_reset);
 
         for (Method method : getClass().getDeclaredMethods()) {
             if (method.isAnnotationPresent(RestGet.class)) {
@@ -62,18 +63,18 @@ public abstract class SimplerServlet extends HttpServlet {
     @Override
     protected final void doGet (HttpServletRequest req, HttpServletResponse rsp)
         throws IOException, ServletException {
-        if (!handleRequest(req, rsp, _gets)) super.doGet(req, rsp);
+        if (!handleRequest(req, rsp, _gets, RequestMethod.GET)) super.doGet(req, rsp);
     }
 
     @Override
     protected final void doPost (HttpServletRequest req, HttpServletResponse rsp)
         throws IOException, ServletException {
-        if (!handleRequest(req, rsp, _posts)) super.doPost(req, rsp);
+        if (!handleRequest(req, rsp, _posts, RequestMethod.POST)) super.doPost(req, rsp);
     }
 
     @Override protected void doDelete (HttpServletRequest req, HttpServletResponse rsp)
         throws ServletException, IOException {
-        if (!handleRequest(req, rsp, _deletes)) super.doDelete(req, rsp);
+        if (!handleRequest(req, rsp, _deletes, RequestMethod.DELETE)) super.doDelete(req, rsp);
     }
 
     protected void mapMethod (Method method, Map<String, RestMethod> map, String responseName) {
@@ -93,7 +94,7 @@ public abstract class SimplerServlet extends HttpServlet {
     }
 
     protected boolean handleRequest (HttpServletRequest req, HttpServletResponse rsp,
-            Map<String, RestMethod> methodMap) throws IOException {
+            Map<String, RestMethod> methodMap, RequestMethod requestMethod) throws IOException {
         try {
             String methodName = getMethodName(req);
             RestMethod method = methodMap.get(methodName);
@@ -103,6 +104,7 @@ public abstract class SimplerServlet extends HttpServlet {
             _req.set(req);
             _rsp.set(rsp);
             _params.set(new Parameters(req));
+            _requestMethod.set(requestMethod);
             if (method == null) {
                 method = checkDefaultMethods(methodName, methodMap);
                 if (method == null) return false;
@@ -306,6 +308,7 @@ public abstract class SimplerServlet extends HttpServlet {
     protected final RequestLocal<HttpServletResponse> _rsp;
     protected final RequestLocal<Parameters> _params;
     protected final RequestLocal<String> _pathInfo;
+    protected final RequestLocal<RequestMethod> _requestMethod;
 
     protected final Map<String, RestMethod> _gets = new HashMap<String, RestMethod>();
     protected final Map<String, RestMethod> _posts = new HashMap<String, RestMethod>();
