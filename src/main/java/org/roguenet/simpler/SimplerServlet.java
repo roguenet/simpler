@@ -45,40 +45,32 @@ public abstract class SimplerServlet extends HttpServlet {
         _pathInfo = new RequestLocal<String>(_reset);
 
         for (Method method : getClass().getDeclaredMethods()) {
-            Map<String, RestMethod> methodMap = null;
-            String responseName = null;
             if (method.isAnnotationPresent(RestGet.class)) {
                 if (method.getParameterTypes().length > 0) {
                     log.warning("GET method has parameter types, unexpected", "method", method);
                 }
-                methodMap = _gets;
-                responseName = method.getAnnotation(RestGet.class).name();
-
-            } else if (method.isAnnotationPresent(RestPost.class)) {
-                methodMap = _posts;
-                responseName = method.getAnnotation(RestPost.class).name();
-
-            } else if (method.isAnnotationPresent(RestDelete.class)) {
-                methodMap = _deletes;
-                responseName = method.getAnnotation(RestDelete.class).name();
-            }
-            if (responseName == null || responseName.isEmpty()) responseName = null;
-            if (methodMap != null) {
-                Class<?>[] parameters = method.getParameterTypes();
-                if (parameters.length != 0 && parameters.length != 1) {
-                    log.warning("Method has more than one parameter", "method", method);
-                }
-                Class<?> reqParam = parameters.length == 0 ? null : parameters[0];
-                String contentType = null;
-                boolean mt = methodIsMicrotome(method);
-                if (method.isAnnotationPresent(NotSerialized.class)) {
-                    mt = false;
-                    contentType = method.getAnnotation(NotSerialized.class).contentType();
-                }
-                methodMap.put(method.getName(),
-                    new RestMethod(method, reqParam, responseName, contentType, mt));
-            }
+                mapMethod(method, _gets, method.getAnnotation(RestGet.class).name());
+            } else if (method.isAnnotationPresent(RestPost.class))
+                mapMethod(method, _posts, method.getAnnotation(RestPost.class).name());
+            else if (method.isAnnotationPresent(RestDelete.class))
+                mapMethod(method, _deletes, method.getAnnotation(RestDelete.class).name());
         }
+    }
+
+    protected void mapMethod (Method method, Map<String, RestMethod> map, String responseName) {
+        Class<?>[] parameters = method.getParameterTypes();
+        if (parameters.length != 0 && parameters.length != 1) {
+            log.warning("Method has more than one parameter", "method", method);
+        }
+        Class<?> reqParam = parameters.length == 0 ? null : parameters[0];
+        String contentType = null;
+        boolean mt = methodIsMicrotome(method);
+        if (method.isAnnotationPresent(NotSerialized.class)) {
+            mt = false;
+            contentType = method.getAnnotation(NotSerialized.class).contentType();
+        }
+        if (responseName != null && responseName.isEmpty()) responseName = null;
+        map.put(method.getName(), new RestMethod(method, reqParam, responseName, contentType, mt));
     }
 
     public String getBaseEndpoint () { return _baseEndpoint; }
