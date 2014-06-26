@@ -138,15 +138,20 @@ public abstract class SimplerServlet extends HttpServlet {
             } catch (InvocationTargetException ite) {
                 usedWriter = true;
                 if (ite.getCause() instanceof RestException) {
-                    ((RestException)ite.getCause()).write(_gson, rsp);
+                    RestException re = (RestException)ite.getCause();
+                    log.info("Call result is RestException", "code", re.code,
+                        "message", re.getMessage());
+                    re.write(_gson, rsp);
                 } else if (ite.getCause() instanceof IOException) {
                     throw (IOException)ite.getCause();
                 } else {
                     doUnexpectedFailure(ite.getCause());
                 }
-            } catch (RestException de) {
+            } catch (RestException re) {
                 usedWriter = true;
-                de.write(_gson, rsp);
+                log.info("Call result is RestException", "code", re.code,
+                    "message", re.getMessage());
+                re.write(_gson, rsp);
             } catch (Throwable t) {
                 doUnexpectedFailure(t);
             }
