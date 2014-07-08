@@ -39,11 +39,11 @@ public abstract class SimplerServlet extends HttpServlet {
         _baseEndpoint = baseEndpoint;
         _gson = gson;
 
-        _req = new RequestLocal<HttpServletRequest>(_reset);
-        _rsp = new RequestLocal<HttpServletResponse>(_reset);
-        _params = new RequestLocal<Parameters>(_reset);
-        _pathInfo = new RequestLocal<String>(_reset);
-        _requestMethod = new RequestLocal<RequestMethod>(_reset);
+        _req = createRequestLocal();
+        _rsp = createRequestLocal();
+        _params = createRequestLocal();
+        _pathInfo = createRequestLocal();
+        _requestMethod = createRequestLocal();
 
         for (Method method : getClass().getDeclaredMethods()) {
             if (method.isAnnotationPresent(RestGet.class)) {
@@ -280,6 +280,10 @@ public abstract class SimplerServlet extends HttpServlet {
         } else {
             _gson.toJson(response, out);
         }
+    }
+
+    protected <T> RequestLocal<T> createRequestLocal () {
+        return new RequestLocal<T>(_reset);
     }
 
     protected static class RestMethod {
