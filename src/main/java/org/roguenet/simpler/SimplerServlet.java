@@ -51,10 +51,13 @@ public abstract class SimplerServlet extends HttpServlet {
                     log.warning("GET method has parameter types, unexpected", "method", method);
                 }
                 mapMethod(method, _gets, method.getAnnotation(RestGet.class).name());
-            } else if (method.isAnnotationPresent(RestPost.class))
+            }
+            if (method.isAnnotationPresent(RestPost.class)) {
                 mapMethod(method, _posts, method.getAnnotation(RestPost.class).name());
-            else if (method.isAnnotationPresent(RestDelete.class))
+            }
+            if (method.isAnnotationPresent(RestDelete.class)) {
                 mapMethod(method, _deletes, method.getAnnotation(RestDelete.class).name());
+            }
         }
     }
 
