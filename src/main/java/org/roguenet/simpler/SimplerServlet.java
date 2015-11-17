@@ -55,6 +55,9 @@ public abstract class SimplerServlet extends HttpServlet {
             if (method.isAnnotationPresent(RestPost.class)) {
                 mapMethod(method, _posts, method.getAnnotation(RestPost.class).name());
             }
+            if (method.isAnnotationPresent(RestPut.class)) {
+                mapMethod(method, _puts, method.getAnnotation(RestPut.class).name());
+            }
             if (method.isAnnotationPresent(RestDelete.class)) {
                 mapMethod(method, _deletes, method.getAnnotation(RestDelete.class).name());
             }
@@ -73,6 +76,12 @@ public abstract class SimplerServlet extends HttpServlet {
     protected final void doPost (HttpServletRequest req, HttpServletResponse rsp)
         throws IOException, ServletException {
         if (!handleRequest(req, rsp, _posts, RequestMethod.POST)) super.doPost(req, rsp);
+    }
+
+    @Override
+    protected final void doPut (HttpServletRequest req, HttpServletResponse rsp)
+        throws IOException, ServletException {
+        if (!handleRequest(req, rsp, _puts, RequestMethod.PUT)) super.doPut(req, rsp);
     }
 
     @Override protected void doDelete (HttpServletRequest req, HttpServletResponse rsp)
@@ -324,5 +333,6 @@ public abstract class SimplerServlet extends HttpServlet {
 
     protected final Map<String, RestMethod> _gets = new HashMap<String, RestMethod>();
     protected final Map<String, RestMethod> _posts = new HashMap<String, RestMethod>();
+    protected final Map<String, RestMethod> _puts = new HashMap<String, RestMethod>();
     protected final Map<String, RestMethod> _deletes = new HashMap<String, RestMethod>();
 }
